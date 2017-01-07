@@ -1394,6 +1394,9 @@ class ServerManager(base.BootingManagerWithFind):
 
         return self._update("/servers/%s" % base.getid(server), body, "server")
 
+    def change_protection(self, server, protection):
+        return self._action("changeProtection", server, {"protection": protection})
+
     def change_password(self, server, password):
         """
         Update the password for a server.

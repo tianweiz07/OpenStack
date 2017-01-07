@@ -589,6 +589,8 @@ def upgrade(migrate_engine):
         Column('deleted', Integer),
         Column('locked_by', inst_lock_enum),
         Column('cleaned', Integer, default=0),
+        Column('protection', String(length=255)),
+        Column('protection_results', String(length=255)),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )

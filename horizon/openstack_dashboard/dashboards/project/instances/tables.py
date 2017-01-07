@@ -15,6 +15,8 @@
 
 import logging
 
+import MySQLdb
+
 from django.conf import settings
 from django.core import urlresolvers
 from django.http import HttpResponse  # noqa
@@ -64,6 +66,16 @@ POWER_STATES = {
     7: "SUSPENDED",
     8: "FAILED",
     9: "BUILDING",
+}
+
+PROTECTION_STATES = {
+    0: " syscall integrity violations; ",
+    1: " idt integrity violations; ",
+    2: " procfs integrity violations; ",
+    3: " hidden processes; ",
+    4: " suspicious programs launching; ",
+    5: " suspicious kernel driver events; ",
+    6: " suspicious network socket events; ",
 }
 
 PAUSE = 0
@@ -437,7 +449,7 @@ class LaunchLinkNG(LaunchLink):
 
 class EditInstance(policy.PolicyTargetMixin, tables.LinkAction):
     name = "edit"
-    verbose_name = _("Edit Instance")
+    verbose_name = _("Edit Instancea")
     url = "horizon:project:instances:update"
     classes = ("ajax-modal",)
     icon = "pencil"
@@ -464,6 +476,18 @@ class EditInstanceSecurityGroups(EditInstance):
 
     def get_link_url(self, project):
         return self._get_link_url(project, 'update_security_groups')
+
+    def allowed(self, request, instance=None):
+        return (instance.status in ACTIVE_STATES and
+                not is_deleting(instance) and
+                request.user.tenant_id == instance.tenant_id)
+
+class EditProtection(EditInstance):
+    name = "edit_protection"
+    verbose_name = _("Edit Protection")
+
+    def get_link_url(self, project):
+        return self._get_link_url(project, 'update_protection')
 
     def allowed(self, request, instance=None):
         return (instance.status in ACTIVE_STATES and
@@ -1042,6 +1066,23 @@ def get_keyname(instance):
 def get_power_state(instance):
     return POWER_STATES.get(getattr(instance, "OS-EXT-STS:power_state", 0), '')
 
+def get_protection_state(instance):
+    db = MySQLdb.connect(host="localhost", port = 3306, user= "root", passwd="adminj310a", db="nova")
+    cursor = db.cursor()
+    cursor.execute("""SELECT protection_results, uuid FROM instances WHERE uuid=%s""", (instance.id))
+    results = cursor.fetchall()
+    cursor.close()
+    db.close()
+
+    ret = ""
+    if results[0][0] == None:
+        return ret
+    protection_result_list = results[0][0].split()
+    for i in range(len(protection_result_list)):
+        if not protection_result_list[i] == "0":
+            ret += str(protection_result_list[i])
+            ret += PROTECTION_STATES.get(i)
+    return ret
 
 STATUS_DISPLAY_CHOICES = (
     ("deleted", pgettext_lazy("Current status of an Instance", u"Deleted")),
@@ -1228,6 +1269,8 @@ class InstancesTable(tables.DataTable):
                             filters=(filters.parse_isotime,
                                      filters.timesince_sortable),
                             attrs={'data-type': 'timesince'})
+    protection_state = tables.Column(get_protection_state,
+                       verbose_name=_("Protection States"))
 
     class Meta(object):
         name = "instances"
@@ -1247,7 +1290,7 @@ class InstancesTable(tables.DataTable):
                        SimpleDisassociateIP, AttachInterface,
                        DetachInterface, EditInstance, AttachVolume,
                        DetachVolume, UpdateMetadata, DecryptInstancePassword,
-                       EditInstanceSecurityGroups, ConsoleLink, LogLink,
+                       EditInstanceSecurityGroups, EditProtection, ConsoleLink, LogLink,
                        TogglePause, ToggleSuspend, ToggleShelve,
                        ResizeLink, LockInstance, UnlockInstance,
                        SoftRebootInstance, RebootInstance,

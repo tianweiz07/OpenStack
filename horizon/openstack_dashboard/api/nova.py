@@ -757,6 +757,9 @@ def server_rebuild(request, instance_id, image_id, password=None,
 def server_update(request, instance_id, name):
     return novaclient(request).servers.update(instance_id, name=name.strip())
 
+# tianweiz
+def server_change_protection(request, instance_id, protection):
+    return novaclient(request).servers.change_protection(instance_id, protection)
 
 def server_migrate(request, instance_id):
     novaclient(request).servers.migrate(instance_id)

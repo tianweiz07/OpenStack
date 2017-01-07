@@ -16,6 +16,12 @@
 
 import re
 
+import sys
+import os
+import signal
+import MySQLdb
+import attest_service
+
 from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_utils import strutils
@@ -824,6 +830,52 @@ class ServersController(wsgi.Controller):
         except exception.InstanceInvalidState as state_error:
             common.raise_http_conflict_for_instance_invalid_state(state_error,
                     'confirmResize', id)
+
+    @wsgi.response(204)
+    @extensions.expected_errors((400, 404, 409))
+    @wsgi.action('changeProtection')
+    def _action_change_protection(self, req, id, body):
+        # get old protection 
+        db = MySQLdb.connect(host="localhost", port = 3306, user= "root", passwd="adminj310a", db="nova")
+
+        cursor = db.cursor()
+        cursor.execute("""SELECT protection, uuid FROM instances WHERE uuid=%s""", (id))
+        results = cursor.fetchall()
+        cursor.close()
+
+        old_protection_list = []
+        if results[0][0] == None:
+            old_protection_list = ["0"]*7
+        else:
+            old_protection_list = list(results[0][0])
+
+        # get new protection
+        new_protection = body['changeProtection']['protection']
+        new_protection_list = ["0"]*7
+        for _protection in new_protection:
+            new_protection_list[int(_protection)-1] = "1"
+
+        # update new protection in the database
+        new_protection_string = ''.join(new_protection_list)
+
+        cursor = db.cursor()
+        cursor.execute("""UPDATE instances SET protection=%s WHERE uuid=%s""", (new_protection_string, id))
+        db.commit()
+        cursor.close()
+
+        # invoke attestation service
+        for i in range(len(new_protection_list)):
+            if old_protection_list[i] == "0" and new_protection_list[i] == "1":
+                # invoke a new process for periodical attestation
+                # this will create zombie processes when children exits.
+                # have not figured out how to avoid this yet.
+                newProc = os.fork()
+                if newProc == 0:
+                    attest_service.attestation_service(id, i+1)
+                    sys.exit(0)
+
+        db.close()
+
 
     @wsgi.response(202)
     @extensions.expected_errors((400, 404, 409))
