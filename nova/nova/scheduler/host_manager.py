@@ -17,6 +17,10 @@
 Manage hosts in the current zone.
 """
 
+import os
+import sys
+import MySQLdb
+
 import collections
 import functools
 import time
@@ -134,6 +138,7 @@ class HostState(object):
         self.hypervisor_hostname = None
         self.cpu_info = None
         self.supported_instances = None
+        self.capability = None
 
         # Resource oversubscription values for the compute host:
         self.limits = {}
@@ -248,6 +253,14 @@ class HostState(object):
         self.cpu_allocation_ratio = compute.cpu_allocation_ratio
         self.ram_allocation_ratio = compute.ram_allocation_ratio
         self.disk_allocation_ratio = compute.disk_allocation_ratio
+
+        db = MySQLdb.connect(host="localhost", port = 3306, user= "root", passwd="adminj310a", db="nova")
+        cursor = db.cursor()
+        cursor.execute("""SELECT protection_capability, host FROM compute_nodes WHERE host=%s""", (self.hypervisor_hostname))
+        results = cursor.fetchall()
+        cursor.close()
+        self.capability = results[0][0]
+        db.close()
 
     def consume_from_request(self, spec_obj):
         """Incrementally update host state from a RequestSpec object."""

@@ -36,6 +36,10 @@ class AvailabilityZoneFilter(filters.BaseHostFilter):
     run_filter_once_per_request = True
 
     def host_passes(self, host_state, spec_obj):
+        # Check the protection capability:
+        if "introspection" in spec_obj.protection and (not host_state.capability == "introspection"):
+            return False
+
         availability_zone = spec_obj.availability_zone
 
         if not availability_zone:

@@ -280,6 +280,7 @@ def upgrade(migrate_engine):
         Column('host_ip', InetSmall()),
         Column('supported_instances', Text),
         Column('pci_stats', Text, nullable=True),
+        Column('protection_capability', String(length=255)),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )

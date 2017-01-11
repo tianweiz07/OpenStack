@@ -1509,7 +1509,7 @@ class API(base.Base):
                 raise exception.InvalidRequest(msg)
 
         filter_properties = scheduler_utils.build_filter_properties(
-                scheduler_hints, forced_host, forced_node, instance_type)
+                scheduler_hints, forced_host, forced_node, instance_type, metadata)
 
         return self._create_instance(
                        context, instance_type,

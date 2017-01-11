@@ -116,10 +116,11 @@ def set_vm_state_and_notify(context, instance_uuid, service, method, updates,
 
 
 def build_filter_properties(scheduler_hints, forced_host,
-        forced_node, instance_type):
+        forced_node, instance_type, metadata):
     """Build the filter_properties dict from data in the boot request."""
     filter_properties = dict(scheduler_hints=scheduler_hints)
     filter_properties['instance_type'] = instance_type
+    filter_properties['protection'] = [value for value in metadata]
     # TODO(alaski): It doesn't seem necessary that these are conditionally
     # added.  Let's just add empty lists if not forced_host/node.
     if forced_host:

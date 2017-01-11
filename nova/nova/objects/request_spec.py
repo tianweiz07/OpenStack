@@ -54,6 +54,7 @@ class RequestSpec(base.NovaObject):
         'ignore_hosts': fields.ListOfStringsField(nullable=True),
         'force_hosts': fields.ListOfStringsField(nullable=True),
         'force_nodes': fields.ListOfStringsField(nullable=True),
+        'protection': fields.ListOfStringsField(nullable=True),
         'requested_destination': fields.ObjectField('Destination',
                                                     nullable=True,
                                                     default=None),
@@ -239,6 +240,7 @@ class RequestSpec(base.NovaObject):
         # Hydrate now from filter_properties
         spec.ignore_hosts = filter_properties.get('ignore_hosts')
         spec.force_hosts = filter_properties.get('force_hosts')
+        spec.protection = filter_properties.get('protection')
         spec.force_nodes = filter_properties.get('force_nodes')
         retry = filter_properties.get('retry', {})
         spec._from_retry(retry)
@@ -341,6 +343,8 @@ class RequestSpec(base.NovaObject):
             filt_props['ignore_hosts'] = self.ignore_hosts
         if self.obj_attr_is_set('force_hosts') and self.force_hosts:
             filt_props['force_hosts'] = self.force_hosts
+        if self.obj_attr_is_set('protection') and self.protection:
+            filt_props['protection'] = self.protection
         if self.obj_attr_is_set('force_nodes') and self.force_nodes:
             filt_props['force_nodes'] = self.force_nodes
         if self.obj_attr_is_set('retry') and self.retry:
@@ -390,6 +394,7 @@ class RequestSpec(base.NovaObject):
         spec_obj._from_instance_numa_topology(numa_topology)
         spec_obj.ignore_hosts = filter_properties.get('ignore_hosts')
         spec_obj.force_hosts = filter_properties.get('force_hosts')
+        spec_obj.protection = filter_properties.get('protection')
         spec_obj.force_nodes = filter_properties.get('force_nodes')
         spec_obj._from_retry(filter_properties.get('retry', {}))
         spec_obj._from_limits(filter_properties.get('limits', {}))
