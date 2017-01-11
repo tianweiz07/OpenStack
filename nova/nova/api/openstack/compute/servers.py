@@ -21,6 +21,7 @@ import os
 import signal
 import MySQLdb
 import attest_service
+import response
 
 from oslo_log import log as logging
 import oslo_messaging as messaging
